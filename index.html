@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamified Flashcard Learning - Turku AMK</title>
+    <style>
+        :root {
+            --turku-yellow: #FFD400;
+            --bg-color: #0f172a;
+            --text-color: #f1f5f9;
+            --muted-text: #cbd5e1;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-image: url('tausta.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        header {
+            margin: 3.5rem 0 1.5rem 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--turku-yellow);
+            margin: 0;
+            letter-spacing: -0.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .subtitle-hint {
+            color: var(--muted-text);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            padding-bottom: 2rem;
+        }
+
+        /* Etusivun kuvalliset pakka-kortit */
+        #home-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            margin-top: 2rem;
+        }
+
+        .deck-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            border-top: 8px solid var(--turku-yellow);
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            min-height: 220px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .deck-card.visual {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.95)), url('VISUAL-etu.png');
+        }
+
+        .deck-card.tactile {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.95)), url('TACTILE-etu.png');
+        }
+
+        .deck-card.auditory {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.95)), url('AUDITORY-etu.png');
+        }
+
+        .deck-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(255, 212, 0, 0.25);
+        }
+
+        .deck-card-content {
+            padding: 1.8rem 1.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+        }
+
+        .deck-card h3 {
+            margin: 0 0 0.3rem 0;
+            font-size: 1.8rem;
+            color: var(--text-color);
+            font-weight: 700;
+        }
+
+        .deck-card p {
+            color: var(--muted-text);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Korttinäkymä */
+        #card-view {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nav-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            max-width: 550px;
+        }
+
+        .back-btn {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(6px);
+            border: 1px solid var(--border-color);
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--turku-yellow);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(51, 65, 85, 0.9);
+            border-color: var(--turku-yellow);
+        }
+
+        .flashcard {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(8px);
+            width: 100%;
+            max-width: 550px;
+            height: 400px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            user-select: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-content {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            max-height: 320px;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            background-color: var(--turku-yellow);
+            color: #0f172a;
+            border: none;
+            padding: 0.75rem 1.8rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn:hover {
+            background-color: #e6bf00;
+            transform: translateY(-2px);
+        }
+
+        .progress {
+            margin-top: 1.2rem;
+            font-weight: 600;
+            color: var(--text-color);
+            background: rgba(15, 23, 42, 0.6);
+            padding: 0.2rem 0.8rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+        }
+
+        .card-img {
+            max-width: 160px;
+            max-height: 120px;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Gamified flashcard learning</h1>
+        <div class="subtitle-hint">Interactive Math, Engineering & Sensory Practice</div>
+    </header>
+
+    <div class="container">
+        <!-- Etusivu: 3 pakkaa kuvataustoilla -->
+        <div id="home-view">
+            <div class="deck-card visual" onclick="openDeck('visual')">
+                <div class="deck-card-content">
+                    <h3>Visual</h3>
+                    <p>50 Engineering Flashcards</p>
+                </div>
+            </div>
+            <div class="deck-card tactile" onclick="openDeck('tactile')">
+                <div class="deck-card-content">
+                    <h3>Tactile</h3>
+                    <p>50 Kinesthetic Tasks</p>
+                </div>
+            </div>
+            <div class="deck-card auditory" onclick="openDeck('auditory')">
+                <div class="deck-card-content">
+                    <h3>Auditory</h3>
+                    <p>50 Auditory Learning Tasks</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Korttinäkymä -->
+        <div id="card-view">
+            <div class="nav-bar">
+                <button class="back-btn" onclick="goHome()">&#8592; Back to Decks</button>
+            </div>
+            
+            <div class="flashcard">
+                <div class="card-content" id="card-content"></div>
+            </div>
+
+            <div class="progress" id="progress-text">Card 1 of 50</div>
+
+            <div class="controls">
+                <button class="btn" onclick="prevCard()">Previous</button>
+                <button class="btn" onclick="nextCard()">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const decks = {
+            visual: [
+                { front: '<img src="1.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 1.jpg puuttuu kansiosta]</p>\'"><br>What is shown in this card?', back: 'Cat<br><span style="font-size:0.9rem; color:#94a3b8;">Card 01/50</span>' },
+                { front: '<img src="2.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 2.jpg puuttuu kansiosta]</p>\'"><br>What component is this?', back: 'Hydraulic block<br><span style="font-size:0.9rem; color:#94a3b8;">Card 02/50</span>' },
+                { front: '<img src="3.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 3.jpg puuttuu kansiosta]</p>\'"><br>What mechanical component is this?', back: 'Planetary gears<br><span style="font-size:0.9rem; color:#94a3b8;">Card 03/50</span>' },
+                { front: '<img src="4.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 4.jpg puuttuu kansiosta]</p>\'"><br>What manufacturing machine is this?', back: 'CNC-mill<br><span style="font-size:0.9rem; color:#94a3b8;">Card 04/50</span>' },
+                { front: '<img src="5.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 5.jpg puuttuu kansiosta]</p>\'"><br>What workshop part is this?', back: 'Lathe chuck<br><span style="font-size:0.9rem; color:#94a3b8;">Card 05/50</span>' },
+                { front: '<img src="6.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 6.jpg puuttuu kansiosta]</p>\'"><br>What automation device is this?', back: 'Industrial robot<br><span style="font-size:0.9rem; color:#94a3b8;">Card 06/50</span>' },
+                { front: '<img src="7.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 7.jpg puuttuu kansiosta]</p>\'"><br>What hydraulic component is this?', back: 'Hydraulic cylinder<br><span style="font-size:0.9rem; color:#94a3b8;">Card 07/50</span>' },
+                { front: '<img src="8.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 8.jpg puuttuu kansiosta]</p>\'"><br>What mechanical part is this?', back: 'Ball bearing<br><span style="font-size:0.9rem; color:#94a3b8;">Card 08/50</span>' },
+                { front: '<img src="9.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 9.jpg puuttuu kansiosta]</p>\'"><br>What engine component is this?', back: 'Turbocharger<br><span style="font-size:0.9rem; color:#94a3b8;">Card 09/50</span>' },
+                { front: '<img src="10.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 10.jpg puuttuu kansiosta]</p>\'"><br>What aerospace propulsion system is this?', back: 'Jet engine (Turbojet)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 10/50</span>' },
+                { front: '<img src="11.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 11.png puuttuu kansiosta]</p>\'"><br>What pneumatic utility machine is this?', back: 'Belt-driven air compressor<br><span style="font-size:0.9rem; color:#94a3b8;">Card 11/50</span>' },
+                { front: '<img src="12.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 12.png puuttuu kansiosta]</p>\'"><br>What space propulsion component is this?', back: 'Rocket engine<br><span style="font-size:0.9rem; color:#94a3b8;">Card 12/50</span>' },
+                { front: '<img src="13.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 13.png puuttuu kansiosta]</p>\'"><br>What spacecraft is shown in orbit?', back: 'Satellite<br><span style="font-size:0.9rem; color:#94a3b8;">Card 13/50</span>' },
+                { front: '<img src="14.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 14.png puuttuu kansiosta]</p>\'"><br>What orbital concept is illustrated here?', back: 'Satellite orbit & coverage footprint<br><span style="font-size:0.9rem; color:#94a3b8;">Card 14/50</span>' },
+                { front: '<img src="15.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 15.png puuttuu kansiosta]</p>\'"><br>What unmanned aerial vehicle is this?', back: 'Drone (Quadcopter)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 15/50</span>' },
+                { front: '<img src="16.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 16.png puuttuu kansiosta]</p>\'"><br>What aerodynamic testing equipment is this?', back: 'Wind tunnel<br><span style="font-size:0.9rem; color:#94a3b8;">Card 16/50</span>' },
+                { front: '<img src="17.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 17.png puuttuu kansiosta]</p>\'"><br>What aircraft structure is shown here?', back: 'Airplane wing (Airfoil with winglet)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 17/50</span>' },
+                { front: '<img src="18.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 18.jpg puuttuu kansiosta]</p>\'"><br>What composite part and manufacturing tool are shown?', back: 'Carbon fiber part & mold<br><span style="font-size:0.9rem; color:#94a3b8;">Card 18/50</span>' },
+                { front: '<img src="19.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 19.png puuttuu kansiosta]</p>\'"><br>What rocket engine components are these?', back: 'Rocket engine nozzles<br><span style="font-size:0.9rem; color:#94a3b8;">Card 19/50</span>' },
+                { front: '<img src="20.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 20.png puuttuu kansiosta]</p>\'"><br>What space probe or asteroid explorer is this?', back: 'Space probe / Asteroid explorer (OSIRIS-REx)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 20/50</span>' },
+                { front: '<img src="21.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 21.png puuttuu kansiosta]</p>\'"><br>What renewable energy installation is this?', back: 'Solar farm (Photovoltaic power station)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 21/50</span>' },
+                { front: '<img src="22.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 22.png puuttuu kansiosta]</p>\'"><br>What renewable energy generator is this?', back: 'Wind turbine<br><span style="font-size:0.9rem; color:#94a3b8;">Card 22/50</span>' },
+                { front: '<img src="23.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 23.png puuttuu kansiosta]</p>\'"><br>What heavy machinery internal rotor is this?', back: 'Turbine rotor / Compressor rotor stage<br><span style="font-size:0.9rem; color:#94a3b8;">Card 23/50</span>' },
+                { front: '<img src="24.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 24.png puuttuu kansiosta]</p>\'"><br>What electrical power system installation is this?', back: 'Electrical substation / Power transformer<br><span style="font-size:0.9rem; color:#94a3b8;">Card 24/50</span>' },
+                { front: '<img src="25.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 25.png puuttuu kansiosta]</p>\'"><br>What electrical distribution infrastructure is this?', back: 'High-voltage transmission towers (Power lines)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 25/50</span>' },
+                { front: '<img src="26.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 26.png puuttuu kansiosta]</p>\'"><br>What heavy industrial power facility is this?', back: 'Nuclear power plant<br><span style="font-size:0.9rem; color:#94a3b8;">Card 26/50</span>' },
+                { front: '<img src="27.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 27.png puuttuu kansiosta]</p>\'"><br>What electronic hardware component is this?', back: 'Printed circuit board (PCB)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 27/50</span>' },
+                { front: '<img src="28.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 28.png puuttuu kansiosta]</p>\'"><br>What microelectronic component is this?', back: 'Integrated circuit (IC chip / DIP)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 28/50</span>' },
+                { front: '<img src="29.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 29.png puuttuu kansiosta]</p>\'"><br>What electromechanical actuator is this?', back: 'Solenoid<br><span style="font-size:0.9rem; color:#94a3b8;">Card 29/50</span>' },
+                { front: '<img src="30.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 30.jpg puuttuu kansiosta]</p>\'"><br>What facility or IT infrastructure is this?', back: 'Server room / Data center rack rows<br><span style="font-size:0.9rem; color:#94a3b8;">Card 30/50</span>' },
+                { front: '<img src="31.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 31.jpg puuttuu kansiosta]</p>\'"><br>What telecommunication medium is this?', back: 'Fiber optic cable (Optical fibers)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 31/50</span>' },
+                { front: '<img src="32.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 32.jpg puuttuu kansiosta]</p>\'"><br>What industrial plant process is shown here?', back: 'Industrial flare stack (Gas flaring)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 32/50</span>' },
+                { front: '<img src="33.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 33.png puuttuu kansiosta]</p>\'"><br>What thermal engineering component is this?', back: 'Brazed plate heat exchanger<br><span style="font-size:0.9rem; color:#94a3b8;">Card 33/50</span>' },
+                { front: '<img src="34.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 34.png puuttuu kansiosta]</p>\'"><br>What plumbing or pressure system unit is this?', back: 'Hydronic pressure booster package / Pressure tank system<br><span style="font-size:0.9rem; color:#94a3b8;">Card 34/50</span>' },
+                { front: '<img src="35.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 35.png puuttuu kansiosta]</p>\'"><br>What HVAC heating control device is this?', back: 'Radiator thermostat / Thermostatic valve head<br><span style="font-size:0.9rem; color:#94a3b8;">Card 35/50</span>' },
+                { front: '<img src="36.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 36.png puuttuu kansiosta]</p>\'"><br>What fluid storage or heating vessel is this?', back: 'Hot water storage tank / Pressure accumulator<br><span style="font-size:0.9rem; color:#94a3b8;">Card 36/50</span>' },
+                { front: '<img src="37.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 37.png puuttuu kansiosta]</p>\'"><br>What pneumatic or workshop utility machine is this?', back: 'Air compressor (Piston compressor with tank)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 37/50</span>' },
+                { front: '<img src="38.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 38.jpg puuttuu kansiosta]</p>\'"><br>What large heavy-duty engine is this?', back: 'Marine diesel engine (Large ship engine)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 38/50</span>' },
+                { front: '<img src="39.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 39.jpg puuttuu kansiosta]</p>\'"><br>What marine propulsion component is this?', back: 'Ship propeller (Marine screw)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 39/50</span>' },
+                { front: '<img src="40.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 40.jpg puuttuu kansiosta]</p>\'"><br>What specialized ship is shown in ice?', back: 'Icebreaker vessel<br><span style="font-size:0.9rem; color:#94a3b8;">Card 40/50</span>' },
+                { front: '<img src="41.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 41.jpg puuttuu kansiosta]</p>\'"><br>What manufacturing and joining process is this?', back: 'Welding (MIG/MAG welding)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 41/50</span>' },
+                { front: '<img src="42.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 42.jpg puuttuu kansiosta]</p>\'"><br>What electronic testing and measuring instrument is this?', back: 'Oscilloscope<br><span style="font-size:0.9rem; color:#94a3b8;">Card 42/50</span>' },
+                { front: '<img src="43.jpg" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 43.jpg puuttuu kansiosta]</p>\'"><br>What industrial electrical installation is this?', back: 'Control cabinet / PLC automation panel<br><span style="font-size:0.9rem; color:#94a3b8;">Card 43/50</span>' },
+                { front: '<img src="44.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 44.png puuttuu kansiosta]</p>\'"><br>What motor control device is this?', back: 'Frequency converter / Variable-frequency drive (VFD)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 44/50</span>' },
+                { front: '<img src="45.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 45.png puuttuu kansiosta]</p>\'"><br>What flying robotic aircraft is this?', back: 'Consumer drone / Quadcopter (top view)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 45/50</span>' },
+                { front: '<img src="46.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 46.png puuttuu kansiosta]</p>\'"><br>What automotive induction component is this?', back: 'Turbocharger compressor housing<br><span style="font-size:0.9rem; color:#94a3b8;">Card 46/50</span>' },
+                { front: '<img src="47.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 47.png puuttuu kansiosta]</p>\'"><br>What engineering design software view is shown here?', back: 'CAD software (2D floor plan & electrical schematic)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 47/50</span>' },
+                { front: '<img src="48.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 48.png puuttuu kansiosta]</p>\'"><br>What aircraft propulsion system is this?', back: 'Turbofan engine<br><span style="font-size:0.9rem; color:#94a3b8;">Card 48/50</span>' },
+                { front: '<img src="51.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 51.png puuttuu kansiosta]</p>\'"><br>What circuit board features are shown in this close-up?', back: 'PCB copper traces and vias (Printed circuit board routing)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 49/50</span>' },
+                { front: '<img src="52.png" class="card-img" onerror="this.outerHTML=\'<p style=\\\'color: #FFD400; font-size: 0.9rem;\\\'>[Kuva 52.png puuttuu kansiosta]</p>\'"><br>What high-frequency electronic module is this?', back: 'RF amplifier module (Low-noise amplifier with SMA connectors)<br><span style="font-size:0.9rem; color:#94a3b8;">Card 50/50</span>' }
+            ],
+            tactile: [
+                { front: 'Walk and recall:<br><br><em>"Walk around the room while reciting everything you remember about a topic without looking at your notes."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Movement increases blood flow and cognitive retention.</span>' },
+                { front: 'Teach while walking:<br><br><em>"Explain a difficult concept as if you were teaching someone, while walking around."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Combines kinetic activity with verbal processing.</span>' },
+                { front: 'Study stations:<br><br><em>"Divide your subject into four topics and create a different physical study station for each one."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Changes in physical environment prevent mental fatigue.</span>' },
+                { front: 'Step-by-step learning:<br><br><em>"Take one step forward every time you correctly recall a new fact."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Creates a physical tracking system for mental progress.</span>' },
+                { front: 'Movement breaks:<br><br><em>"After studying for 20 minutes, create a 2-minute movement routine before returning to your work."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Resets focus and keeps energy levels high.</span>' },
+                { front: 'Act it out:<br><br><em>"Physically act out a process, historical event, scientific concept, or theory."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Engages muscle memory to solidify complex ideas.</span>' },
+                { front: 'Concept corners:<br><br><em>"Assign different corners of the room to different answers. Move to the corner representing your answer."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Spatial learning anchors concepts in physical locations.</span>' },
+                { front: 'Memory walk:<br><br><em>"Place notes around your room and walk between them, recalling the information at each location."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Uses the method of loci (memory palace) with physical movement.</span>' },
+                { front: 'Squat and solve:<br><br><em>"Complete one squat after solving each practice question correctly."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Rewards mental effort with physical energy release.</span>' },
+                { front: 'Create a human timeline:<br><br><em>"Arrange yourself and your classmates in chronological order to represent events or stages in a process."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Visualizes chronological order through physical positioning.</span>' },
+                { front: 'Build your knowledge:<br><br><em>"Use LEGO, blocks, clay, or everyday objects to physically represent a concept you\'re studying."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Translates abstract concepts into tangible 3D objects.</span>' },
+                { front: 'Make a 3D model:<br><br><em>"Create a physical model of something you\'ve learned, such as a cell, machine, molecule, or building."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Deepens structural understanding through hands-on construction.</span>' },
+                { front: 'Paper engineering:<br><br><em>"Fold, cut, and assemble paper to create a visual representation of a difficult topic."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Enhances spatial reasoning and fine motor skills.</span>' },
+                { front: 'Concept puzzle:<br><br><em>"Turn your notes into puzzle pieces and challenge yourself to put the information back together."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Promotes active reconstruction of fragmented knowledge.</span>' },
+                { front: 'Create flashcards:<br><br><em>"Handwrite and decorate flashcards using different colours, textures, and symbols."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">The act of writing physically encodes data into memory.</span>' },
+                { front: 'Build a mind map:<br><br><em>"Use sticky notes to physically arrange ideas and connect related concepts."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Allows flexible spatial organization of thoughts.</span>' },
+                { front: 'Make a study sculpture:<br><br><em>"Use household objects to represent an abstract concept."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Stimulates creative thinking and metaphorical representation.</span>' },
+                { front: 'Construct a flowchart:<br><br><em>"Use string, paper, and sticky notes to create a physical flowchart of a process."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Clarifies sequential steps and dependencies physically.</span>' },
+                { front: 'Design a board game:<br><br><em>"Turn your subject into a board game with questions, challenges, and rewards."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Gamifies learning and structures information into rules.</span>' },
+                { front: 'Create a miniature classroom:<br><br><em>"Use small objects or figurines to demonstrate a concept you are struggling to understand."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Simplifies complex setups into manageable scale models.</span>' },
+                { front: 'Rewrite from memory:<br><br><em>"Read a section of your notes, put them away, and rewrite everything you remember by hand."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Forces active recall and manual encoding.</span>' },
+                { front: 'Sticky-note challenge:<br><br><em>"Write one important fact on each sticky note and organise them into categories."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Makes sorting and categorizing physical and modular.</span>' },
+                { front: 'Colour-code your learning:<br><br><em>"Assign different colours to definitions, examples, formulas, and important concepts."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Improves visual and tactile categorization.</span>' },
+                { front: 'Trace to remember:<br><br><em>"Write important formulas or vocabulary repeatedly using your finger before writing them on paper."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Builds muscle memory for key shapes and letters.</span>' },
+                { front: 'Cut and sort:<br><br><em>"Write key terms and definitions on separate pieces of paper, cut them out, and match them."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Creates physical interactive matching sets.</span>' },
+                { front: 'Create a tactile vocabulary list:<br><br><em>"Use different textures or materials to represent different words or concepts."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Engages touch receptors for stronger memory anchors.</span>' },
+                { front: 'Draw instead of writing:<br><br><em>"Replace a paragraph of notes with a detailed illustration."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Translates text into visual-spatial memory.</span>' },
+                { front: 'Formula cards:<br><br><em>"Write formulas on separate cards and physically arrange them according to how they relate to each other."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Reveals relationships and hierarchies through physical layout.</span>' },
+                { front: 'The disappearing notes challenge:<br><br><em>"Gradually cover parts of your notes with paper until you can recall the entire page without looking."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Fades scaffolding progressively to test true retention.</span>' },
+                { front: 'Study Jenga:<br><br><em>"Write questions on Jenga blocks. Answer a question every time you pull one out."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Combines tactile dexterity with cognitive testing under tension.</span>' },
+                { front: 'Flashcard toss:<br><br><em>"Place containers at different distances, each representing a difficulty level. Throw a ball into a container and answer a question of that difficulty."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Adds hand-eye coordination and spatial targets to studying.</span>' },
+                { front: 'Memory matching:<br><br><em>"Create matching cards with questions and answers and find the correct pairs."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Provides tactile feedback through card manipulation.</span>' },
+                { front: 'Timed sorting:<br><br><em>"Sort concepts, definitions, or examples into the correct categories against the clock."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Increases focus and physical speed of sorting.</span>' },
+                { front: 'Dice challenge:<br><br><em>"Roll a dice to determine your next study activity (e.g. summarise, draw, explain, solve, recall, or teach)."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Introduces random variety and physical interaction with dice.</span>' },
+                { front: 'Puzzle yourself:<br><br><em>"Solve a puzzle where each correctly answered question reveals another piece."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Rewards intellectual progress with puzzle completion.</span>' },
+                { front: 'Question ball:<br><br><em>"Throw a ball to a classmate, who must answer a question about the topic before passing it on."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Combines physical catch with group accountability.</span>' },
+                { front: 'Beat your previous score:<br><br><em>"Complete a set of practice questions and physically record your progress each time."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Tracks growth visually and manually.</span>' },
+                { front: 'The 5-minute challenge:<br><br><em>"Set a timer and see how many concepts you can recall by writing or drawing them within five minutes."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Improves retrieval speed under timed pressure.</span>' },
+                { front: 'Teach a teddy bear:<br><br><em>"Explain your topic to a stuffed animal or figurine as if it were a student."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Creates a safe, tactile listener to practice articulation.</span>' },
+                { front: 'Become the concept:<br><br><em>"Imagine you are a molecule, historical figure, machine component, or mathematical function and act out its role."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Embodied cognition helps internalize complex behaviors.</span>' },
+                { front: 'Create a study dance:<br><br><em>"Make simple movements to represent different stages of a process or sequence."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Rhythm and choreography lock sequential steps into memory.</span>' },
+                { front: 'Study outdoors:<br><br><em>"Take your notes outside and combine studying with a walk in a suitable environment."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Combines fresh air, change of scenery, and light movement.</span>' },
+                { front: 'Make a physical study timeline:<br><br><em>"Use string and clips to organise important dates, events, or stages."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Linear physical layout makes historical or process flow clear.</span>' },
+                { front: 'Experiment and discover:<br><br><em>"Create a small experiment to demonstrate something you have learned."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Empirical proof anchors theoretical understanding.</span>' },
+                { front: 'Build your own revision kit:<br><br><em>"Collect objects, cards, models, and materials that help you physically interact with your subject."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Personalizes tactile tools for specific study modules.</span>' },
+                { front: 'Study with your senses:<br><br><em>"Find ways to incorporate touch, movement, sight, and sound into one study session."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Multisensory integration maximizes memory pathways.</span>' },
+                { front: 'Create a reward system:<br><br><em>"Put small rewards in envelopes and open one after completing a specific study goal."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Uses physical anticipation and surprise to reinforce habits.</span>' },
+                { front: 'The ultimate teach-back:<br><br><em>"Pick a topic, build a physical demonstration, and explain it to someone without referring to your notes."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Ultimate test of mastery combining building and communication.</span>' },
+                { front: 'Kinesthetic anchor:<br><br><em>"Associate a specific hand gesture with a key concept whenever you review it."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Triggers memory recall instantly through physical movement.</span>' },
+                { front: 'Rhythmic pacing:<br><br><em>"Pace back and forth to a steady rhythm while reciting complex formulas or definitions."</em>', back: '<strong>Goal achieved!</strong><br><span style="font-size:1rem; color:#94a3b8;">Keeps alertness high and improves information flow.</span>' }
+            ],
+            auditory: [
+                "1. Make a mind map",
+                "2. Turn book into audiobook",
+                "3. Find podcasts of the topic or book",
+                "4. Find music related to the topic or book",
+                "5. Listen to a lector related to the topic or book",
+                "6. Discuss with your pair about the topic or book",
+                "7. Explain the topic out loud as if you were teaching it to a younger student",
+                "8. Record yourself summarizing the main ideas, then play it back and note what you missed",
+                "9. Read your notes aloud, using different voices or emphasis for key points",
+                "10. Pretend to be a radio host or news reporter and present the topic to an imaginary audience",
+                "11. Talk through a problem step by step out loud while you solve it",
+                "12. Record a short audio summary of each chapter or section and listen to the recordings before bed or on your way to school",
+                "13. Use a text-to-speech tool to have your notes read back to you",
+                "14. Listen to a recording of a class or lecture a second time and pause it to repeat key ideas in your own words",
+                "15. Create a voice memo “cheat sheet” of the ten most important facts",
+                "16. Turn key facts into a rhyme, rap, or a song",
+                "17. Make up a catchy chant or rhythm to remember lists, dates, or formulas",
+                "18. Create an acronym or mnemonic and say it aloud several times",
+                "19. Repeat new vocabulary aloud, stressing how each word sounds",
+                "20. Hold a debate where each side argues a different view of the topic",
+                "21. Quiz each other out loud, taking turns as the question-asker",
+                "22. Form a small study group and have each person present one part of the topic",
+                "23. Interview a classmate, family member, or expert about the topic",
+                "24. Play “20 Questions” with concepts from the topic",
+                "25. Retell the topic as a story to someone and ask them to repeat it back to you",
+                "26. Act out a scene from the book or historical event, focusing on the dialogue",
+                "27. Record a mock podcast episode with a partner, covering the topic as hosts",
+                "28. Present the topic as a short speech or TED talk",
+                "29. Record yourself saying a term, leave a pause, then say the definition. Play it back and try to answer in the pause",
+                "30. Call a friend or relative and explain what you learned in three minutes. Let them interrupt with questions",
+                "31. In a group, go around the circle with each person adding one fact. No repeats allowed, and anyone who gets stuck is out",
+                "32. Choose a sound for each type of idea, such as a clap for causes, a snap for effects, and a tap for examples. Say your notes out loud and make the matching sound for each point",
+                "33. During a lecture or video, notice which words the speaker stresses or repeats. Write them down afterward, since they are often the key points",
+                "34. Recite what you know while walking around the room and link each fact to a step or spot in the room. Revisit the same spots to recall the facts",
+                "35. A partner reads one sentence of your notes aloud, and you immediately repeat it back word for word. Then switch roles",
+                "36. Explain the topic to an object, such as a toy, a plant, or a pet. If you get stuck you’ve found something you need to review",
+                "37. Play a video clip on the topic with the sound off and narrate it yourself. Then replay it with the sound on and compare what you said",
+                "38. While listening to a podcast or lecture, pause it and say aloud what you think comes next. Press play and check how close you were",
+                "39. One person describes a key term without saying the word, and the other person guesses it. Only spoken clues are allowed",
+                "40. Whisper a key fact down a line of classmates. The last person says what they heard, and you compare it with the original to see what got lost",
+                "41. Take turns playing the game-show host who reads out questions in a dramatic voice while the others race to answer",
+                "42. Choose a steady beat, such as tapping a pencil or using a metronome app, and recite your facts in time with it until the rhythm carries you through the list",
+                "43. Read something you write slowly out loud. Your ears will catch mistakes and awkward sentences that your eyes skipped",
+                "44. At the end of each study session, record 60 seconds on what you learned today and what is still confusing. Listen to the entries before the test",
+                "45. Send a classmate a voice message with a question about the topic. They reply with a voice answer and a question of their own",
+                "46. Listen to two different audio sources on the same topic, such as two podcasts or two speakers. Discuss what they agree on and where they differ",
+                "47. Explain the topic in two minutes, then in 30 seconds, then in a single sentence. Each round forces you to pick out what matters most",
+                "48. Break long or tricky terms into syllables and clap each one while saying it out loud. Repeat until you can say the word smoothly from memory",
+                "49. Listen to a lecture or audio recording at faster speed first to get the big picture. Then listen at normal speed and pause to note the details",
+                "50. Recite the steps of a process or the events of a story in reverse order, from the end to the start. This shows whether you really understand how the parts connect"
+            ]
+        };
+
+        let currentDeckKey = '';
+        let currentIndex = 0;
+        let isFlipped = false;
+
+        function openDeck(deckKey) {
+            currentDeckKey = deckKey;
+            currentIndex = 0;
+            isFlipped = false;
+            
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('card-view').style.display = 'flex';
+            
+            updateCard();
+        }
+
+        function goHome() {
+            document.getElementById('card-view').style.display = 'none';
+            document.getElementById('home-view').style.display = 'grid';
+        }
+
+        function updateCard() {
+            const card = decks[currentDeckKey][currentIndex];
+            const contentDiv = document.getElementById('card-content');
+            
+            if (currentDeckKey === 'auditory') {
+                contentDiv.innerHTML = `<div style="font-size: 1.3rem; font-weight: 600; color: var(--turku-yellow);">${card}</div>`;
+            } else {
+                if (!isFlipped) {
+                    contentDiv.innerHTML = card.front;
+                } else {
+                    contentDiv.innerHTML = `<div style="color: var(--turku-yellow); font-weight: bold; margin-bottom: 0.5rem;">Answer / Explanation:</div>${card.back}`;
+                }
+            }
+
+            document.getElementById('progress-text').innerText = `Card ${currentIndex + 1} of ${decks[currentDeckKey].length}`;
+        }
+
+        function flipCard() {
+            if (currentDeckKey === 'auditory') return;
+            isFlipped = !isFlipped;
+            updateCard();
+        }
+
+        document.querySelector('.flashcard').addEventListener('click', function() {
+            if (currentDeckKey !== 'auditory') {
+                flipCard();
+            }
+        });
+
+        function nextCard() {
+            isFlipped = false;
+            currentIndex = (currentIndex + 1) % decks[currentDeckKey].length;
+            updateCard();
+        }
+
+        function prevCard() {
+            isFlipped = false;
+            currentIndex = (currentIndex - 1 + decks[currentDeckKey].length) % decks[currentDeckKey].length;
+            updateCard();
+        }
+    </script>
+</body>
+</html>
